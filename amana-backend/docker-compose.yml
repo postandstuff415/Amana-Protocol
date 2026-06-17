@@ -1,0 +1,84 @@
+version: "3.9"
+
+services:
+  merchant-api:
+    build:
+      context: .
+      dockerfile: merchant-api/Dockerfile
+    container_name: amana-merchant-api
+    ports:
+      - "3001:3001"
+    environment:
+      - MERCHANT_API_PORT=3001
+      - HOST=0.0.0.0
+      - AMANA_DB_PATH=/data/amana.db
+    volumes:
+      - amana-data:/data
+    networks:
+      - amana-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  ussd-gateway:
+    build:
+      context: .
+      dockerfile: ussd-gateway/Dockerfile
+    container_name: amana-ussd-gateway
+    ports:
+      - "3002:3002"
+    environment:
+      - USSD_GATEWAY_PORT=3002
+      - HOST=0.0.0.0
+      - MERCHANT_API_URL=http://merchant-api:3001
+    depends_on:
+      merchant-api:
+        condition: service_healthy
+    networks:
+      - amana-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3002/api/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+  relayer-service:
+    build:
+      context: .
+      dockerfile: relayer-service/Dockerfile
+    container_name: amana-relayer
+    ports:
+      - "3003:3003"
+    environment:
+      - RELAYER_PORT=3003
+      - HOST=0.0.0.0
+      - MERCHANT_API_URL=http://merchant-api:3001
+      - ENTRYPOINT_ADDRESS=0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789
+      - BUNDLER_RPC_URL=
+      - GAS_SPONSOR_PRIVATE_KEY=
+    depends_on:
+      merchant-api:
+        condition: service_healthy
+    networks:
+      - amana-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3003/api/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+networks:
+  amana-net:
+    driver: bridge
+
+volumes:
+  amana-data:
+    driver: local

@@ -1,0 +1,26 @@
+{
+  "name": "@amana/relayer-service",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Amana Protocol - ERC-4337 Relayer & Gas Sponsor Service. Maps SIM-authenticated phone numbers to smart contract wallets and sponsors gas.",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "cors": "^2.8.5",
+    "ethers": "^6.13.0",
+    "helmet": "^8.0.0",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/uuid": "^10.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

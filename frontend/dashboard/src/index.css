@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+body {
+  margin: 0;
+  background: #0a0a0a;
+}
+
+/* Simple bar chart component styling */
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 100%;
+}
+
+.bar-chart .bar {
+  flex: 1;
+  border-radius: 2px 2px 0 0;
+  transition: height 0.3s ease;
+  min-height: 2px;
+}

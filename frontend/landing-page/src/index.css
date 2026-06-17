@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  --color-africa-50: #faf8f0;
+  --color-africa-100: #f2ecda;
+  --color-africa-200: #e3d6ad;
+  --color-africa-300: #d4ba78;
+  --color-africa-400: #c6a24e;
+  --color-africa-500: #b88c33;
+  --color-africa-600: #9e702a;
+  --color-africa-700: #7e5624;
+  --color-africa-800: #6a4623;
+  --color-africa-900: #5c3b20;
+  --color-africa-950: #341f10;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+}
