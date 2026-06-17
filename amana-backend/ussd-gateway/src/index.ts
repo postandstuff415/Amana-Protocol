@@ -41,7 +41,7 @@ app.get('/api/health', (_req, res) => {
 
 // ─── USSD Callback (Africa's Talking) ──────────────────────────────
 // Africa's Talking sends POST to this endpoint when a user dials *483#
-app.post('/ussd', (req: Request, res: any) => {
+app.post('/ussd', async (req: express.Request, res: express.Response) => {
   const { sessionId, serviceCode, phoneNumber, text } = req.body;
 
   console.log(`[USSD] Session: ${sessionId}, Phone: ${phoneNumber}, Text: "${text}"`);
@@ -51,7 +51,7 @@ app.post('/ussd', (req: Request, res: any) => {
   }
 
   try {
-    const response = ussdHandler.handle(phoneNumber, text || '', sessionId);
+    const response = await ussdHandler.handle(phoneNumber, text || '', sessionId);
     console.log(`[USSD] Response: ${response.type} — ${response.text.substring(0, 50)}...`);
     return res.json(response);
   } catch (error) {
@@ -64,14 +64,14 @@ app.post('/ussd', (req: Request, res: any) => {
 });
 
 // ─── Internal API (for admin dashboard relay) ──────────────────────
-app.get('/api/ussd/simulate', (req: Request, res: any) => {
+app.get('/api/ussd/simulate', async (req: express.Request, res: express.Response) => {
   // Simple GET-based simulation for development/testing
   const { phone, text } = req.query;
   if (!phone) {
     return res.status(400).json({ success: false, error: 'phone query param required' });
   }
   
-  const response = ussdHandler.handle(phone as string, (text as string) || '', 'sim-' + Date.now());
+  const response = await ussdHandler.handle(phone as string, (text as string) || '', 'sim-' + Date.now());
   return res.json({ success: true, data: response });
 });
 

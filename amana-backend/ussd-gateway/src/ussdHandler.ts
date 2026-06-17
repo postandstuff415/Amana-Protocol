@@ -28,7 +28,7 @@ export class USSDHandler {
    * @param sessionId - Africa's Talking session ID
    * @returns Formatted USSD response
    */
-  handle(phoneNumber: string, text: string, sessionId: string): USSDResponse {
+  async handle(phoneNumber: string, text: string, sessionId: string): Promise<USSDResponse> {
     // Parse the USSD text input
     // Africa's Talking sends: "" (first request), "1*2*3" (subsequent)
     const levels = text ? text.split('*').filter(Boolean) : [];
@@ -41,6 +41,18 @@ export class USSDHandler {
 
     // Route based on the first menu choice
     const mainOption = levels[0];
+
+    // Check activation status for sensitive menus
+    if (mainOption === '1' || mainOption === '4') {
+      const status = await this.getMerchantStatus(phoneNumber);
+      if (status !== 'active') {
+        const message = this.getStatusMessage(status);
+        return {
+          text: `END ${message}`,
+          type: 'release',
+        };
+      }
+    }
 
     switch (mainOption) {
       case '1':
@@ -55,6 +67,33 @@ export class USSDHandler {
         return this.handleDispute(levels);
       default:
         return this.showError(phoneNumber);
+    }
+  }
+
+  private async getMerchantStatus(phoneNumber: string): Promise<string> {
+    try {
+      const apiUrl = process.env.MERCHANT_API_URL || 'http://merchant-api:3001';
+      const response = await fetch(`${apiUrl}/api/merchants/phone/${encodeURIComponent(phoneNumber)}`);
+      if (!response.ok) {
+        return 'pending'; // Assume pending if not found or error
+      }
+      const result: any = await response.json();
+      return result.data?.status || 'pending';
+    } catch (error) {
+      console.error('[USSD] Error fetching merchant status:', error);
+      return 'pending';
+    }
+  }
+
+  private getStatusMessage(status: string): string {
+    switch (status) {
+      case 'suspended':
+        return 'Your account is suspended. Please contact support.';
+      case 'banned':
+        return 'Your account has been banned due to policy violations.';
+      case 'pending':
+      default:
+        return 'Your account is pending verification. Please wait 24 hours.';
     }
   }
 

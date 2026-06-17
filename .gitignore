@@ -37,5 +37,10 @@ __pycache__/
 venv/
 .venv/
 
-# Docker
-.docker
+# Databases
+*.db
+*.db-shm
+*.db-wal
+
+# Simulation Data
+simulation_data/
