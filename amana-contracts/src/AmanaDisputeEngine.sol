@@ -3,13 +3,17 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./AmanaEscrow.sol";
 
 /**
  * @title AmanaDisputeEngine
  * @dev Handles Tier 1 and Tier 2 disputes for the Amana Protocol.
+ * Uses SafeERC20 for non-compliant token safety.
  */
 contract AmanaDisputeEngine is Ownable {
+    using SafeERC20 for IERC20;
+
     AmanaEscrow public escrow;
     address public frontEndPool;
     address public marketAmbassadorChairman;
@@ -22,19 +26,32 @@ contract AmanaDisputeEngine is Ownable {
     event MicroShieldReimbursed(uint256 indexed tradeId, address indexed buyer, uint256 amount);
     event MacroDisputeInitiated(uint256 indexed tradeId);
     event MacroDisputeResolved(uint256 indexed tradeId, AmanaEscrow.State finalState);
+    event MarketAmbassadorUpdated(address indexed newChairman);
+    event FrontEndPoolUpdated(address indexed newPool);
 
     constructor(
         address _escrow,
         address _frontEndPool,
         address _marketAmbassadorChairman
     ) Ownable(msg.sender) {
+        require(_escrow != address(0), "Zero address: escrow");
+        require(_frontEndPool != address(0), "Zero address: frontEndPool");
+        require(_marketAmbassadorChairman != address(0), "Zero address: ambassador");
         escrow = AmanaEscrow(_escrow);
         frontEndPool = _frontEndPool;
         marketAmbassadorChairman = _marketAmbassadorChairman;
     }
 
     function setMarketAmbassadorChairman(address _chairman) external onlyOwner {
+        require(_chairman != address(0), "Zero address: chairman");
         marketAmbassadorChairman = _chairman;
+        emit MarketAmbassadorUpdated(_chairman);
+    }
+
+    function setFrontEndPool(address _pool) external onlyOwner {
+        require(_pool != address(0), "Zero address: pool");
+        frontEndPool = _pool;
+        emit FrontEndPoolUpdated(_pool);
     }
 
     /**

@@ -54,7 +54,7 @@ contract AmanaProtocolTest is Test {
     function testCreateTrade() public {
         vm.startPrank(buyer);
         token.approve(address(escrow), 100 * 1e6);
-        uint256 tradeId = escrow.createTrade(seller, address(token), 100 * 1e6);
+        uint256 tradeId = escrow.initializeTrade(seller, address(token), 100 * 1e6);
         vm.stopPrank();
 
         (address b, address s, address t, uint256 a, uint256 f, AmanaEscrow.State st, , ) = escrow.trades(tradeId);
@@ -68,14 +68,14 @@ contract AmanaProtocolTest is Test {
     function testCompleteTrade() public {
         vm.startPrank(buyer);
         token.approve(address(escrow), 100 * 1e6);
-        uint256 tradeId = escrow.createTrade(seller, address(token), 100 * 1e6);
+        uint256 tradeId = escrow.initializeTrade(seller, address(token), 100 * 1e6);
         vm.stopPrank();
 
         vm.prank(seller);
         escrow.markAsShipped(tradeId);
 
         vm.prank(buyer);
-        escrow.confirmReceipt(tradeId);
+        escrow.releaseEscrow(tradeId);
 
         assertEq(token.balanceOf(seller), 99 * 1e6);
         assertEq(token.balanceOf(address(splitter)), 1 * 1e6);
@@ -88,7 +88,7 @@ contract AmanaProtocolTest is Test {
     function testMicroShieldDispute() public {
         vm.startPrank(buyer);
         token.approve(address(escrow), 50 * 1e6); // Below $100
-        uint256 tradeId = escrow.createTrade(seller, address(token), 50 * 1e6);
+        uint256 tradeId = escrow.initializeTrade(seller, address(token), 50 * 1e6);
         escrow.raiseDispute(tradeId);
         vm.stopPrank();
 
@@ -102,7 +102,7 @@ contract AmanaProtocolTest is Test {
     function testMacroDispute() public {
         vm.startPrank(buyer);
         token.approve(address(escrow), 200 * 1e6); // Above $100
-        uint256 tradeId = escrow.createTrade(seller, address(token), 200 * 1e6);
+        uint256 tradeId = escrow.initializeTrade(seller, address(token), 200 * 1e6);
         escrow.raiseDispute(tradeId);
         vm.stopPrank();
 

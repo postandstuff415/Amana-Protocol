@@ -61,6 +61,15 @@ export interface Dispute {
   resolvedAt?: string
 }
 
+export interface YieldData {
+  totalYieldGenerated: string
+  merchantRebateShare: string
+  liquidityFloor: string
+  liquidEscrow: string
+  yieldBearingEscrow: string
+  lastUpdated: string
+}
+
 /* ─── Fetch Wrapper ─── */
 
 class ApiError extends Error {
@@ -141,22 +150,41 @@ export function fetchDisputes(): Promise<{ data: Dispute[]; source: 'api' }> {
 }
 
 /**
+ * Fetch yield and liquidity data from the API.
+ */
+export async function fetchYieldData(): Promise<{ data: YieldData; source: 'api' }> {
+  const endpoint = (API_CONFIG.endpoints as any).yield || '/yield'
+  const url = `${API_CONFIG.baseUrl}${endpoint}`
+  
+  const response = await fetch(url).catch(() => null)
+  if (!response || !response.ok) {
+    throw new Error('Yield API unreachable')
+  }
+
+  const json = await response.json()
+  return { data: json.data, source: 'api' }
+}
+
+/**
  * Fetch all data needed by the dashboard in parallel.
  */
 export async function fetchAllDashboardData(): Promise<{
   merchants: Merchant[]
   trades: Trade[]
   disputes: Dispute[]
+  yieldData?: YieldData
 }> {
-  const [merchants, trades, disputes] = await Promise.all([
+  const [merchants, trades, disputes, yieldRes] = await Promise.allSettled([
     fetchMerchants(),
     fetchTrades(),
     fetchDisputes(),
+    fetchYieldData()
   ])
 
   return {
-    merchants: merchants.data,
-    trades: trades.data,
-    disputes: disputes.data,
+    merchants: merchants.status === 'fulfilled' ? merchants.value.data : [],
+    trades: trades.status === 'fulfilled' ? trades.value.data : [],
+    disputes: disputes.status === 'fulfilled' ? disputes.value.data : [],
+    yieldData: yieldRes.status === 'fulfilled' ? yieldRes.value.data : undefined
   }
 }

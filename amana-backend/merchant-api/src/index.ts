@@ -14,6 +14,7 @@ import { getDb, closeDb } from './database/init';
 import merchantRoutes from './routes/merchantRoutes';
 import tradeRoutes from './routes/tradeRoutes';
 import disputeRoutes from './routes/disputeRoutes';
+import yieldRoutes from './routes/yieldRoutes';
 
 const app = express();
 const PORT = parseInt(process.env.MERCHANT_API_PORT || '3001', 10);
@@ -41,6 +42,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/merchants', merchantRoutes);
 app.use('/api/trades', tradeRoutes);
 app.use('/api/disputes', disputeRoutes);
+app.use('/api/yield', yieldRoutes);
 
 // ─── 404 Handler ───────────────────────────────────────────────────
 app.use((_req, res) => {

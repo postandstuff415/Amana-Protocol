@@ -16,6 +16,7 @@
 import { ethers } from 'ethers';
 import { walletService } from './walletService';
 import { BundlerClient, UserOperation, DEFAULT_ENTRYPOINT } from './bundlerClient';
+import { dexAggregator } from './dexAggregator';
 
 export type EscrowAction =
   | 'create_escrow'
@@ -23,7 +24,8 @@ export type EscrowAction =
   | 'confirm_delivery'
   | 'release_funds'
   | 'refund_buyer'
-  | 'file_dispute';
+  | 'file_dispute'
+  | 'update_liquidity_floor';
 
 export interface GasSponsorshipRequest {
   phoneNumber: string;
@@ -31,6 +33,8 @@ export interface GasSponsorshipRequest {
   tradeId?: string;
   amount?: string;
   escrowAddress?: string;
+  sourceToken?: string;
+  targetToken?: string;
 }
 
 export interface GasSponsorshipResponse {
@@ -96,7 +100,7 @@ export class Relayer {
       const nonce = await this.getNonce(wallet.walletAddress);
 
       // Step 3: Build call data for the requested action
-      const callData = this.buildCallData(request);
+      const callData = await this.buildCallData(request);
 
       // Step 4: Construct the UserOperation
       const userOp: Partial<UserOperation> = {
@@ -160,7 +164,24 @@ export class Relayer {
    * Build the call data for an escrow action.
    * In production, this encodes the function call to the escrow contract.
    */
-  private buildCallData(request: GasSponsorshipRequest): string {
+  private async buildCallData(request: GasSponsorshipRequest): Promise<string> {
+    // Check if multi-hop swap is needed
+    if (request.sourceToken && request.targetToken && request.sourceToken !== request.targetToken && request.amount) {
+      console.log(`[Relayer] Intercepting cross-border trade for multi-hop swap: ${request.sourceToken} -> ${request.targetToken}`);
+      
+      const chainId = this.bundler['config'].chainId;
+      const bestPath = await dexAggregator.getBestPath(
+        request.sourceToken,
+        request.targetToken,
+        request.amount,
+        chainId
+      );
+
+      // In a real AA setup, we might use a MultiCall or a custom hook to swap and then escrow
+      // For this simulation, we return the swap call data
+      return dexAggregator.encodeSwap(bestPath.path, request.amount, bestPath.expectedOutput);
+    }
+
     // Placeholder — in production, use ethers.Interface.encodeFunctionData()
     // Example:
     // const escrowIface = new ethers.Interface([...abi]);
@@ -177,8 +198,11 @@ export class Relayer {
         return '0x'; // releaseFunds(tradeId)
       case 'refund_buyer':
         return '0x'; // refundBuyer(tradeId)
-      case 'file_dispute':
-        return '0x'; // fileDispute(tradeId, reason)
+      case 'update_liquidity_floor':
+        const escrowIface = new ethers.Interface([
+          'function updateLiquidityFloor(uint256 _newFloor) external',
+        ]);
+        return escrowIface.encodeFunctionData('updateLiquidityFloor', [request.amount || '0']);
       default:
         return '0x';
     }

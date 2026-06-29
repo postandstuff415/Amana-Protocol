@@ -5,7 +5,7 @@
  * Matches the same shape as the live API response for seamless switching.
  */
 
-import type { Merchant, Trade, Dispute } from './api'
+import type { Merchant, Trade, Dispute, YieldData } from './api'
 
 export const MOCK_MERCHANTS: Merchant[] = [
   { id: 'mock-m-ke-001', phoneNumber: '+254712345678', country: 'KE', name: 'Grace Wanjiku', businessName: 'Wanjiku Supplies', status: 'active', walletAddress: '0x1a2b...3c4d', trustedContacts: [], totalTrades: 18, totalVolume: '12450000000000000000000', createdAt: '2026-04-01T00:00:00.000Z', updatedAt: '2026-06-08T00:00:00.000Z' },
@@ -35,10 +35,19 @@ export interface MockDataSet {
   merchants: Merchant[]
   trades: Trade[]
   disputes: Dispute[]
+  yieldData: YieldData
 }
 
 export const MOCK_ALL: MockDataSet = {
   merchants: MOCK_MERCHANTS,
   trades: MOCK_TRADES,
   disputes: MOCK_DISPUTES,
+  yieldData: {
+    totalYieldGenerated: '12450.50',
+    merchantRebateShare: '4357.67',
+    liquidityFloor: '25000',
+    liquidEscrow: '15000',
+    yieldBearingEscrow: '85000',
+    lastUpdated: new Date().toISOString()
+  }
 }
